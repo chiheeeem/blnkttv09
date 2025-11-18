@@ -23,7 +23,7 @@ body {
     overflow: hidden;
     position: relative;
     filter: contrast(1.2) brightness(1.1);
-    padding: 50px; /* PAGE PADDING */
+    padding: 50px;
     box-sizing: border-box;
 }
 
@@ -39,7 +39,7 @@ button, .arrow, span {
     width:100vw; height:100vh;
     object-fit:cover;
     z-index:-2;
-    filter: brightness(0.6); /* darker videos */
+    filter: brightness(0.6);
 }
 
 /* STATIC & TV EFFECTS */
@@ -173,7 +173,7 @@ button {
     display: none;
     width: 100%;
     height: 100%;
-    padding: 100px; /* content padding */
+    padding: 100px;
     box-sizing: border-box;
     font-size: 60px;
     line-height: 1.2;
@@ -181,8 +181,31 @@ button {
     position: relative;
     color: rgba(255,255,255,0.5);
     text-transform: uppercase;
+    overflow-y: auto;
+    
+    scrollbar-width: none; 
+    -ms-overflow-style: none;
+}
+#mainPage::-webkit-scrollbar {
+    display: none;
+}
 
-    /* CHROMATIC SHADOW */
+/* CHANNEL CONTENT */
+#channelContent {
+    max-width: 100%;
+    overflow-y: auto;
+    font-size: 1em;
+    line-height: 1.4em;
+
+    scrollbar-width: none; 
+    -ms-overflow-style: none;
+}
+#channelContent::-webkit-scrollbar {
+    display: none;
+}
+
+/* CHROMATIC SHADOW */
+#mainPage span, #channelContent {
     text-shadow:
         3px 0 0 rgba(255,0,0,0.3),
         -3px 0 0 rgba(0,255,255,0.3),
@@ -228,7 +251,7 @@ button {
 <!-- LOCK SCREEN -->
 <div id="lockScreen">
     <h1></h1>
-    <input id="codeInput" placeholder="_ _ _ _">
+    <input id="codeInput" placeholder="">
     <button onclick="checkCode()">Enter</button>
     <p id="lockMessage"></p>
 </div>
@@ -259,29 +282,37 @@ const lockMessage = document.getElementById("lockMessage");
 const bgVideo = document.getElementById("bgVideo");
 const channelSound = document.getElementById("channelSwitchSound");
 
-// Channel 0 = black/off, others = videos
 const channelVideos = [
     "", // Channel 0 = black screen
-    "videos/channel-01.webm",
-    "videos/channel-02.webm",
-    "videos/channel-03.webm",
-    "videos/channel-04.webm",
-    "videos/channel-05.webm",
-    "videos/channel-06.webm",
-    "videos/channel-07.webm",
-    "videos/channel-08.webm"
+    "videos/static.mp4",
+    "videos/static.mp4",
+    "videos/static.mp4",
+    "videos/static.mp4",
+    "videos/static.mp4",
+    "videos/static.mp4",
+    "videos/static.mp4",
+    "videos/static.mp4"
 ];
 
+// Treat each channel as a page with HTML formatting
 const channels = [
-    "TV is off",
-    "Channel 01 content",
-    "Channel 02 content",
-    "Channel 03 content",
-    "Channel 04 content",
-    "Channel 05 content",
-    "Channel 06 content",
-    "Channel 07 content",
-    "Channel 08 content"
+    `<h2>TTV-Channel 00</h2><p></p>`,
+
+    `<h2>TTV-Channel 01</h2><p>No signal</p>`,
+
+    `<h2>TTV-Channel 02</h2><p>No signal</p>`,
+
+    `<h2>TTV-Channel 03</h2><p>No signal</p>`,
+
+    `<h2>TTV-Channel 04</h2><p>No signal</p>`,
+
+    `<h2>TTV-Channel 05</h2><p>No signal</p>`,
+
+    `<h2>TTV-Channel 06</h2><p>No signal</p>`,
+
+    `<h2>TTV-Channel 07</h2><p>No signal</p>`,
+
+    `<h2>TTV-Channel 08</h2><p>No signal</p>`
 ];
 
 let currentChannel = 0;
@@ -291,7 +322,9 @@ function switchChannelVideo() {
         bgVideo.pause();
         bgVideo.style.background = "black";
         bgVideo.src = "";
+        bgVideo.style.display = "none"; 
     } else {
+        bgVideo.style.display = "block";
         bgVideo.style.background = "none";
         bgVideo.pause();
         bgVideo.src = channelVideos[currentChannel];
@@ -303,7 +336,8 @@ function switchChannelVideo() {
 function updateChannel() {
     document.getElementById("channelLabel").textContent =
         `Channel ${String(currentChannel).padStart(2,'0')}`;
-    document.getElementById("channelContent").textContent =
+    // Use innerHTML for HTML formatting
+    document.getElementById("channelContent").innerHTML =
         channels[currentChannel];
 }
 
