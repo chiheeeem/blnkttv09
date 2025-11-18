@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARG Terminal TV</title>
+
+<style>
+/* Custom font */
+@font-face {
+    font-family: 'MyCustomFont';
+    src: url('assets/fonts/VCROSDMono.woff') format('woff');
+}
+
+/* Default cursor */
+body {
+    cursor: url('assets/images/cursor-default.png'), auto;
+    margin: 0;
+    background-color: black;
+    color: white;
+    font-family: 'MyCustomFont', monospace;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+    filter: contrast(1.2) brightness(1.1);
+    padding: 50px; /* PAGE PADDING */
+    box-sizing: border-box;
+}
+
+/* Cursor for buttons */
+button, .arrow, span {
+    cursor: url('assets/images/cursor-pointer.png'), pointer;
+}
+
+/* VIDEO BACKGROUND (TV) */
+#bgVideo {
+    position:absolute;
+    top:0; left:0;
+    width:100vw; height:100vh;
+    object-fit:cover;
+    z-index:-2;
+    filter: brightness(0.6); /* darker videos */
+}
+
+/* STATIC & TV EFFECTS */
+#staticOverlay, #scanlines, #movingScanline, #plasticOverlay, #glitch, #crtCurvature, #artifactOverlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+}
+
+#staticOverlay {
+    background-image: url('assets/images/static.png');
+    background-size: cover;
+    opacity: 0.1;
+    z-index: 0;
+    animation: flicker 0.08s steps(3) infinite, noiseMove 0.2s infinite linear;
+}
+
+@keyframes flicker {
+    0% { opacity: 0.05; }
+    25% { opacity: 0.12; }
+    50% { opacity: 0.08; }
+    75% { opacity: 0.15; }
+    100% { opacity: 0.05; }
+}
+
+@keyframes noiseMove {
+    0% { transform: translate(0,0); }
+    50% { transform: translate(3px,-2px); }
+    100% { transform: translate(0,0); }
+}
+
+#scanlines {
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.04),
+        rgba(255,255,255,0.04) 3px,
+        transparent 3px,
+        transparent 8px
+    );
+    z-index: 1;
+}
+
+#movingScanline {
+    background: rgba(255,255,255,0.08);
+    height: 40px;
+    z-index: 2;
+    filter: blur(6px);
+    animation: scanlineMove 4s linear infinite;
+}
+
+@keyframes scanlineMove {
+    0% { top: -50px; }
+    100% { top: 110%; }
+}
+
+#plasticOverlay {
+    background-image: url('assets/images/plastic-noise.png');
+    background-size: 100px 100px;
+    opacity: 0.05;
+    z-index: 1.5;
+    mix-blend-mode: overlay;
+}
+
+#glitch {
+    background: inherit;
+    opacity: 0.02;
+    z-index: 3;
+    animation: glitchAnim 0.1s infinite linear;
+}
+@keyframes glitchAnim {
+    0% { transform: translateY(0) skewX(0deg); }
+    20% { transform: translateY(-2px) skewX(1deg); }
+    40% { transform: translateY(2px) skewX(-1deg); }
+    60% { transform: translateY(-1px) skewX(0.5deg); }
+    80% { transform: translateY(1px) skewX(-0.5deg); }
+    100% { transform: translateY(0) skewX(0deg); }
+}
+
+#crtCurvature {
+    border-radius:15px;
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.5);
+    z-index:4;
+}
+
+#artifactOverlay {
+    background-image: url('effect-artifacts.gif');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.3;
+    mix-blend-mode: screen;
+    z-index:3.5;
+}
+
+/* LOCK SCREEN */
+#lockScreen {
+    display: none;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    z-index: 3;
+}
+
+input {
+    background: black;
+    color: white;
+    border: 1px solid white;
+    padding: 10px;
+    margin-top: 20px;
+    text-align: center;
+    caret-color: transparent;
+    font-family: 'MyCustomFont', monospace;
+    font-size: 18px;
+}
+
+button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background: black;
+    color: white;
+    border: 1px solid white;
+    font-family: 'MyCustomFont', monospace;
+    font-size: 18px;
+}
+
+/* MAIN PAGE */
+#mainPage {
+    display: none;
+    width: 100%;
+    height: 100%;
+    padding: 100px; /* content padding */
+    box-sizing: border-box;
+    font-size: 60px;
+    line-height: 1.2;
+    z-index: 5;
+    position: relative;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+
+    /* CHROMATIC SHADOW */
+    text-shadow:
+        3px 0 0 rgba(255,0,0,0.3),
+        -3px 0 0 rgba(0,255,255,0.3),
+        0 3px 0 rgba(255,0,0,0.3),
+        0 -3px 0 rgba(0,255,255,0.3);
+}
+
+/* CHANNEL CONTROL */
+#channelControl {
+    position: absolute;
+    top: 0; right: 0;
+    font-size: 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    margin: 40px;
+    padding-bottom: 60px;
+}
+
+#channelControl span {
+    cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<!-- BACKGROUND TV -->
+<video id="bgVideo" autoplay loop></video>
+
+<!-- CRT / TV FX -->
+<div id="staticOverlay"></div>
+<div id="scanlines"></div>
+<div id="movingScanline"></div>
+<div id="plasticOverlay"></div>
+<div id="glitch"></div>
+<div id="crtCurvature"></div>
+<div id="artifactOverlay"></div>
+
+<!-- SOUND -->
+<audio id="channelSwitchSound" src="assets/sounds/channel-switch.wav"></audio>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen">
+    <h1></h1>
+    <input id="codeInput" placeholder="_ _ _ _">
+    <button onclick="checkCode()">Enter</button>
+    <p id="lockMessage"></p>
+</div>
+
+<!-- MAIN PAGE -->
+<div id="mainPage">
+    <div id="channelControl">
+        <div id="dateDisplay"></div>
+
+        <div>
+            <span onclick="prevChannel()">◄</span>
+            <span id="channelLabel">Channel 00</span>
+            <span onclick="nextChannel()">►</span>
+        </div>
+    </div>
+
+    <div id="channelContent">TV is off</div>
+</div>
+
+<script>
+/* ===== LOCK SCREEN ===== */
+const correctCode = "1234";
+const lockScreen = document.getElementById("lockScreen");
+const mainPage = document.getElementById("mainPage");
+const lockMessage = document.getElementById("lockMessage");
+
+/* ===== TV VIDEO SYSTEM ===== */
+const bgVideo = document.getElementById("bgVideo");
+const channelSound = document.getElementById("channelSwitchSound");
+
+// Channel 0 = black/off, others = videos
+const channelVideos = [
+    "", // Channel 0 = black screen
+    "videos/channel-01.webm",
+    "videos/channel-02.webm",
+    "videos/channel-03.webm",
+    "videos/channel-04.webm",
+    "videos/channel-05.webm",
+    "videos/channel-06.webm",
+    "videos/channel-07.webm",
+    "videos/channel-08.webm"
+];
+
+const channels = [
+    "TV is off",
+    "Channel 01 content",
+    "Channel 02 content",
+    "Channel 03 content",
+    "Channel 04 content",
+    "Channel 05 content",
+    "Channel 06 content",
+    "Channel 07 content",
+    "Channel 08 content"
+];
+
+let currentChannel = 0;
+
+function switchChannelVideo() {
+    if(channelVideos[currentChannel] === "") {
+        bgVideo.pause();
+        bgVideo.style.background = "black";
+        bgVideo.src = "";
+    } else {
+        bgVideo.style.background = "none";
+        bgVideo.pause();
+        bgVideo.src = channelVideos[currentChannel];
+        bgVideo.load();
+        bgVideo.play().catch(()=>{});
+    }
+}
+
+function updateChannel() {
+    document.getElementById("channelLabel").textContent =
+        `Channel ${String(currentChannel).padStart(2,'0')}`;
+    document.getElementById("channelContent").textContent =
+        channels[currentChannel];
+}
+
+/* NEXT / PREV */
+function nextChannel() {
+    currentChannel = (currentChannel + 1) % channels.length;
+    channelSound.currentTime = 0; channelSound.play();
+    updateChannel();
+    switchChannelVideo();
+}
+
+function prevChannel() {
+    currentChannel = (currentChannel - 1 + channels.length) % channels.length;
+    channelSound.currentTime = 0; channelSound.play();
+    updateChannel();
+    switchChannelVideo();
+}
+
+/* LOCK SCREEN CHECK */
+function checkCode() {
+    const input = document.getElementById("codeInput").value;
+    if (input === correctCode) {
+        lockScreen.style.display = "none";
+        mainPage.style.display = "block";
+        switchChannelVideo();
+        updateChannel();
+    } else {
+        lockMessage.textContent = "Incorrect code.";
+    }
+}
+
+/* DATE DISPLAY */
+function updateDate() {
+    document.getElementById("dateDisplay").textContent =
+        new Date().toLocaleString();
+}
+setInterval(updateDate, 1000);
+updateDate();
+
+lockScreen.style.display = "flex";
+</script>
+
+</body>
+</html>
